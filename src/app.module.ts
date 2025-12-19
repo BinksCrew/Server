@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { LogsModule } from './logs/logs.module';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { QuestionsModule } from './questions/questions.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     UsersModule,
     AuthModule,
     LogsModule,
+    QuestionsModule,
   ],
   controllers: [AppController],
   providers: [

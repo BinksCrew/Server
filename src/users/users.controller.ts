@@ -17,6 +17,8 @@ import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Auth } from '../auth/decorators/auth.decorator';
+import { ValidRoles } from '../auth/interfaces/valid-roles';
 
 @ApiTags('Users')
 @Controller('users')
@@ -60,16 +62,19 @@ export class UsersController {
   }
 
   @Get()
+  @Auth(ValidRoles.admin)
   findAll() {
     return this.usersService.findAll();
   }
 
   @Get(':id')
+  @Auth(ValidRoles.admin)
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
   @Patch(':id')
+  @Auth(ValidRoles.admin)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -107,6 +112,7 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @Auth(ValidRoles.admin)
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
