@@ -14,11 +14,23 @@ export class User {
   @Column({ unique: true })
   email: string;
 
+  @Column({ unique: true })
+  cedula: string;
+
+  @Column({ nullable: true })
+  username: string;
+
   @Column({ select: false })
   password: string;
 
   @Column({ nullable: true })
   fullName: string;
+
+  @Column({ nullable: true })
+  phone: string;
+
+  @Column('text', { nullable: true })
+  photo_url: string | null;
 
   @Column({ default: true })
   isActive: boolean;
