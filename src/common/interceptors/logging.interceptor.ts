@@ -78,7 +78,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const sanitizedBody = { ...body };
     if (sanitizedBody.password) sanitizedBody.password = '********';
 
-    this.logsService.createLog({
+    void this.logsService.createLog({
       method,
       url,
       ip,

@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, QueryFailedError } from 'typeorm';
 import { Anime } from './entities/anime.entity';
 import { CreateAnimeDto } from './dto/create-anime.dto';
 import { UpdateAnimeDto } from './dto/update-anime.dto';
@@ -21,7 +21,7 @@ export class AnimesService {
       const anime = this.animeRepository.create(createAnimeDto);
       return await this.animeRepository.save(anime);
     } catch (error) {
-      this.handleDBErrors(error);
+      this.handleDBErrors(error as QueryFailedError);
     }
   }
 
@@ -50,7 +50,7 @@ export class AnimesService {
     try {
       return await this.animeRepository.save(anime);
     } catch (error) {
-      this.handleDBErrors(error);
+      this.handleDBErrors(error as QueryFailedError);
     }
   }
 
@@ -60,8 +60,8 @@ export class AnimesService {
     return { message: 'Anime deleted successfully' };
   }
 
-  private handleDBErrors(error: any): never {
-    if (error.code === '23505') throw new BadRequestException(error.detail);
+  private handleDBErrors(error: QueryFailedError): never {
+    if ((error.driverError as any).code === '23505') throw new BadRequestException((error.driverError as any).detail);
     console.log(error);
     throw new BadRequestException('Please check server logs');
   }

@@ -17,7 +17,7 @@ export class QuestionsService {
     const question = this.questionRepository.create({
       ...rest,
       anime: { id: animeId },
-    });
+    } as Partial<Question>);
     return this.questionRepository.save(question);
   }
 
@@ -97,14 +97,15 @@ export class QuestionsService {
     if (!question)
       throw new NotFoundException(`Question with id ${id} not found`);
 
-    const isCorrect =
-      question.correctAnswer.toLowerCase().trim() ===
-      userAnswer.toLowerCase().trim();
+    const qa = question.correctAnswer?.toString().toLowerCase().trim();
+    const ua = userAnswer?.toString().toLowerCase().trim();
+    const isCorrect = qa === ua;
 
     return {
-      correct: isCorrect,
+      correct: isCorrect, // legacy key
+      isCorrect,
       message: isCorrect ? '¡Acertaste!' : 'Respuesta incorrecta',
-      correctAnswer: isCorrect ? undefined : question.correctAnswer, // Optionally reveal answer if wrong? Maybe better not to for now, or yes.
+      correctAnswer: question.correctAnswer,
     };
   }
 }

@@ -7,6 +7,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
+import { Request } from 'express';
 import { User } from '../../users/entities/user.entity';
 import { META_ROLES } from '../decorators/role-protected.decorator';
 
@@ -25,7 +26,7 @@ export class UserRoleGuard implements CanActivate {
     if (validRoles.length === 0) return true;
 
     const req = context.switchToHttp().getRequest();
-    const user = req.user as User;
+    const user = req.user;
 
     if (!user) throw new BadRequestException('User not found');
 
@@ -36,7 +37,7 @@ export class UserRoleGuard implements CanActivate {
     }
 
     throw new ForbiddenException(
-      `User ${user.fullName} need a valid role: [${validRoles}]`,
+      `User ${user.fullName} need a valid role: [${validRoles.join(', ')}]`,
     );
   }
 }

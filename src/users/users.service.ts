@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, QueryFailedError } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -39,7 +39,7 @@ export class UsersService {
       delete (user as any).password;
       return user;
     } catch (error) {
-      this.handleDBErrors(error);
+      this.handleDBErrors(error as QueryFailedError);
     }
   }
 
@@ -58,8 +58,7 @@ export class UsersService {
     updateUserDto: UpdateUserDto,
     file?: Express.Multer.File,
   ) {
-    const user = await this.findOne(id);
-    const { password, email, ...userData } = updateUserDto; // email changes not allowed
+    const { password, ...userData } = updateUserDto; // email changes not allowed
 
     if (file) {
       userData['photo_url'] = await this.imageUploadService.uploadImage(file);
@@ -82,7 +81,7 @@ export class UsersService {
       delete (updatedUser as any).password;
       return updatedUser;
     } catch (error) {
-      this.handleDBErrors(error);
+      this.handleDBErrors(error as QueryFailedError);
     }
   }
 
@@ -106,8 +105,8 @@ export class UsersService {
     });
   }
 
-  private handleDBErrors(error: any): never {
-    if (error.code === '23505') throw new BadRequestException(error.detail);
+  private handleDBErrors(error: QueryFailedError): never {
+    if ((error.driverError as any).code === '23505') throw new BadRequestException((error.driverError as any).detail);
 
     console.log(error);
     throw new InternalServerErrorException('Please check server logs');

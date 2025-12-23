@@ -30,9 +30,15 @@ export class AppController {
   @Get('stats')
   @Auth(ValidRoles.admin)
   async getStats() {
-    const usersCount = await this.dataSource.query('SELECT COUNT(*) as count FROM users');
-    const animesCount = await this.dataSource.query('SELECT COUNT(*) as count FROM animes');
-    const questionsCount = await this.dataSource.query('SELECT COUNT(*) as count FROM questions');
+    const usersCount = await this.dataSource.query(
+      'SELECT COUNT(*) as count FROM users',
+    );
+    const animesCount = await this.dataSource.query(
+      'SELECT COUNT(*) as count FROM animes',
+    );
+    const questionsCount = await this.dataSource.query(
+      'SELECT COUNT(*) as count FROM questions',
+    );
 
     return {
       users: parseInt(usersCount[0].count),
