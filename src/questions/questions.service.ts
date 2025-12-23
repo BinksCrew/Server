@@ -18,7 +18,9 @@ export class QuestionsService {
   }
 
   async findAll() {
-    return this.questionRepository.find();
+    return this.questionRepository.createQueryBuilder('question')
+      .addSelect('question.correctAnswer')
+      .getMany();
   }
 
   async findOne(id: string) {
