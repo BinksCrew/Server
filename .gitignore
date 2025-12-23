@@ -3,8 +3,8 @@
 /node_modules
 /build
 
-# Logs
-logs
+# Logs (only ignore root-level runtime logs, keep src/logs)
+/logs/
 *.log
 npm-debug.log*
 pnpm-debug.log*

@@ -1,218 +1,204 @@
-# 📚 Documentación de la API - Sistema de Quiz de Anime
+# API del Dashboard Administrativo
 
-Esta documentación detalla los endpoints disponibles, los formatos de solicitud/respuesta y los requisitos de autenticación para el frontend.
+Documentación completa de la API NestJS (prefijo global `/api`) para integrarla con el dashboard administrativo.
 
-## 🔐 Autenticación y Seguridad
+## Autenticación y roles
+- Esquema: JWT Bearer en `Authorization: Bearer <token>`.
+- Roles: `admin`, `super-user`, `user`. Los endpoints marcados con `admin` requieren ese rol; los que indican "Autenticado" aceptan cualquier rol válido.
+- Swagger: `/api/docs`.
 
-El sistema utiliza **JWT (JSON Web Tokens)**.
-- **Header requerido:** `Authorization: Bearer <token>`
-- **Roles disponibles:**
-  - `admin`: Acceso total (crear/editar/borrar preguntas y usuarios).
-  - `user`: Acceso básico (responder preguntas, ver perfil).
-  - `super-user`: (Reservado para uso futuro).
+## Resumen rápido de rutas
+- Salud: `GET /api/health` (pública).
+- Auth: `POST /api/auth/register`, `POST /api/auth/login` (públicas).
+- Users: `POST /api/users` (pública), `GET /api/users`, `GET /api/users/:id`, `PATCH /api/users/:id`, `DELETE /api/users/:id` (todas las de lectura/edición requieren `admin`).
+- Questions: `POST /api/questions` (`admin`), `GET /api/questions` (autenticado), `GET /api/questions/:id` (autenticado), `PATCH /api/questions/:id` (`admin`), `DELETE /api/questions/:id` (`admin`), `POST /api/questions/:id/answer` (autenticado).
 
----
+## Endpoints detallados
 
-## 👤 Usuarios (Auth & Users)
-
-### 1. Registrar Usuario
-Crea una cuenta nueva. Soporta subida de imagen de perfil.
-
-- **Método:** `POST`
-- **URL:** `/api/auth/register`
-- **Content-Type:** `multipart/form-data` (si sube foto) o `application/json`
-- **Acceso:** Público
-
-**Body (Form-Data):**
-| Campo | Tipo | Requerido | Descripción |
-|-------|------|-----------|-------------|
-| `cedula` | String | ✅ Sí | Identificación única. |
-| `email` | String | ✅ Sí | Correo electrónico único. |
-| `password` | String | ✅ Sí | Mínimo 6 caracteres. |
-| `fullName` | String | ❌ No | Nombre completo. |
-| `username` | String | ❌ No | Nombre de usuario. |
-| `phone` | String | ❌ No | Número de teléfono. |
-| `file` | File | ❌ No | Imagen (jpg, jpeg, png). Max 5MB. |
-
-**Respuesta Exitosa (201 Created):**
+### Auth
+#### POST /api/auth/register
+- Acceso: Público.
+- Content-Type: `application/json`.
+- Body:
 ```json
 {
-  "id": "uuid-del-usuario",
-  "email": "usuario@ejemplo.com",
   "cedula": "1234567890",
-  "fullName": "Juan Perez",
+  "email": "user@mail.com",
+  "password": "secret123",
+  "fullName": "Nombre Apellido",
+  "username": "alias",
+  "phone": "+57 3000000000"
+}
+```
+- Respuesta 201:
+```json
+{
+  "id": "uuid",
+  "email": "user@mail.com",
+  "cedula": "1234567890",
+  "fullName": "Nombre Apellido",
+  "username": "alias",
+  "phone": "+57 3000000000",
+  "photo_url": null,
   "isActive": true,
   "roles": ["user"],
-  "photo_url": "https://i.ibb.co/...",
-  "token": "eyJhbGciOiJIUzI1NiIs..."
+  "token": "<jwt>"
 }
 ```
 
-### 2. Iniciar Sesión
-Obtiene el token de acceso.
-
-- **Método:** `POST`
-- **URL:** `/api/auth/login`
-- **Content-Type:** `application/json`
-- **Acceso:** Público
-
-**Body:**
+#### POST /api/auth/login
+- Acceso: Público.
+- Content-Type: `application/json`.
+- Body:
 ```json
 {
-  "email": "admin@binkscrew.com",
-  "password": "123456"
+  "email": "admin@mail.com",
+  "password": "secret123"
 }
 ```
-
-**Respuesta Exitosa (201 Created):**
+- Respuesta 201:
 ```json
 {
-  "id": "uuid-del-usuario",
-  "email": "admin@binkscrew.com",
-  "fullName": "Administrador",
-  "roles": ["admin", "super-user", "user"],
-  "token": "eyJhbGciOiJIUzI1NiIs..."
+  "id": "uuid",
+  "email": "admin@mail.com",
+  "fullName": "Admin",
+  "roles": ["admin", "user"],
+  "isActive": true,
+  "token": "<jwt>"
 }
 ```
 
----
+### Users
+#### POST /api/users
+- Acceso: Público (útil para onboarding controlado). Considera protegerlo si solo admin debe crear.
+- Content-Type: `multipart/form-data`.
+- Campos form-data:
+  - `cedula` (string, requerido)
+  - `email` (string, requerido)
+  - `password` (string, min 6, requerido)
+  - `fullName` (string, opcional)
+  - `username` (string, opcional)
+  - `phone` (string, opcional)
+  - `file` (binary, opcional; jpg/jpeg/png; max 5 MB)
+- Respuesta 201: usuario creado (sin `password`).
 
-## ❓ Preguntas (Quiz System)
+#### GET /api/users
+- Acceso: `admin`.
+- Respuesta 200: lista de usuarios.
 
-### 1. Obtener Todas las Preguntas
-Lista todas las preguntas disponibles para el quiz.
+#### GET /api/users/:id
+- Acceso: `admin`.
+- Respuesta 200: usuario.
 
-- **Método:** `GET`
-- **URL:** `/api/questions`
-- **Acceso:** Usuario Autenticado (`user`, `admin`)
+#### PATCH /api/users/:id
+- Acceso: `admin`.
+- Content-Type: `multipart/form-data` (mismos campos que POST, todos opcionales, incluye `file` para actualizar foto).
+- Respuesta 200: usuario actualizado.
 
-**Respuesta Exitosa (200 OK):**
-```json
-[
-  {
-    "id": "uuid-pregunta-1",
-    "question": "¿Quién es el protagonista de One Piece?",
-    "type": "multiple-choice",
-    "anime": "One Piece",
-    "options": ["Luffy", "Zoro", "Nami"],
-    "createdAt": "2025-12-19T14:00:00.000Z"
-  },
-  {
-    "id": "uuid-pregunta-2",
-    "question": "¿Naruto se convierte en Hokage?",
-    "type": "true-false",
-    "anime": "Naruto",
-    "options": ["Verdadero", "Falso"],
-    "createdAt": "2025-12-19T14:05:00.000Z"
-  }
-]
-```
-*Nota: El campo `correctAnswer` no se envía en este listado para evitar trampas.*
+#### DELETE /api/users/:id
+- Acceso: `admin`.
+- Respuesta 200: `{ "message": "User with id <id> deleted" }`.
 
-### 2. Responder una Pregunta
-Envía la respuesta del usuario para verificar si es correcta.
-
-- **Método:** `POST`
-- **URL:** `/api/questions/:id/answer`
-- **Acceso:** Usuario Autenticado (`user`, `admin`)
-
-**Body:**
+### Questions
+#### POST /api/questions
+- Acceso: `admin`.
+- Content-Type: `application/json`.
+- Body:
 ```json
 {
-  "answer": "Luffy"
+  "question": "¿Quién es el protagonista de One Piece?",
+  "type": "multiple-choice",
+  "anime": "One Piece",
+  "correctAnswer": "Luffy",
+  "options": ["Luffy", "Zoro", "Nami"]
 }
 ```
+- Respuesta 201: pregunta creada.
 
-**Respuesta (Acierto):**
+#### GET /api/questions
+- Acceso: Autenticado.
+- Respuesta 200: lista de preguntas (sin `correctAnswer`).
+
+#### GET /api/questions/:id
+- Acceso: Autenticado.
+- Respuesta 200: pregunta (sin `correctAnswer`).
+
+#### PATCH /api/questions/:id
+- Acceso: `admin`.
+- Content-Type: `application/json`.
+- Body: parcial del esquema de creación.
+- Respuesta 200: pregunta actualizada.
+
+#### DELETE /api/questions/:id
+- Acceso: `admin`.
+- Respuesta 200: pregunta eliminada.
+
+#### POST /api/questions/:id/answer
+- Acceso: Autenticado.
+- Content-Type: `application/json`.
+- Body:
 ```json
-{
-  "correct": true,
-  "message": "¡Acertaste!"
-}
+{ "answer": "Luffy" }
 ```
-
-**Respuesta (Fallo):**
+- Respuesta 200 (correcto):
 ```json
-{
-  "correct": false,
-  "message": "Respuesta incorrecta",
-  "correctAnswer": "Luffy" 
-}
+{ "correct": true, "message": "¡Acertaste!" }
 ```
-
-### 3. Crear Pregunta (Solo Admin)
-Agrega una nueva pregunta al banco de preguntas.
-
-- **Método:** `POST`
-- **URL:** `/api/questions`
-- **Acceso:** Solo `admin`
-
-**Body:**
+- Respuesta 200 (incorrecto):
 ```json
-{
-  "question": "¿Cuál es el Quirk de Deku?",
-  "type": "multiple-choice", 
-  "anime": "My Hero Academia",
-  "correctAnswer": "One For All",
-  "options": ["Explosión", "One For All", "Mitad Frio Mitad Caliente"]
-}
+{ "correct": false, "message": "Respuesta incorrecta", "correctAnswer": "Luffy" }
 ```
-*Tipos sugeridos: `multiple-choice`, `true-false`, `open`.*
 
-### 4. Editar Pregunta (Solo Admin)
-- **Método:** `PATCH`
-- **URL:** `/api/questions/:id`
-- **Acceso:** Solo `admin`
-- **Body:** Igual al de crear, pero todos los campos son opcionales.
-
-### 5. Eliminar Pregunta (Solo Admin)
-- **Método:** `DELETE`
-- **URL:** `/api/questions/:id`
-- **Acceso:** Solo `admin`
-
----
-
-## 🛠️ Gestión de Usuarios (Solo Admin)
-
-### 1. Listar Usuarios
-- **Método:** `GET`
-- **URL:** `/api/users`
-- **Acceso:** Solo `admin`
-
-### 2. Editar Usuario
-Permite a un administrador cambiar datos de un usuario (incluyendo roles).
-
-- **Método:** `PATCH`
-- **URL:** `/api/users/:id`
-- **Content-Type:** `multipart/form-data` o `application/json`
-- **Acceso:** Solo `admin`
-
----
-
-## 🏥 Health Check
-Verifica si el servidor y la base de datos están funcionando.
-
-- **Método:** `GET`
-- **URL:** `/api/health`
-- **Acceso:** Público
-
-**Respuesta:**
+### Health
+#### GET /api/health
+- Acceso: Público.
+- Respuesta 200:
 ```json
 {
   "status": "ok",
   "database": "connected",
-  "timestamp": "2025-12-19T15:00:00.000Z"
+  "timestamp": "2025-12-22T15:00:00.000Z"
 }
 ```
 
----
+## Validaciones principales
+- Emails válidos, password min 6, strings no vacíos.
+- Tamaño de imagen max 5 MB; tipos permitidos jpg/jpeg/png.
+- IDs son UUID.
 
-## ⚠️ Códigos de Error Comunes
+## Errores comunes
+| Código | Causa típica |
+|--------|--------------|
+| 400 | Body inválido o campos faltantes. |
+| 401 | Token ausente o inválido. |
+| 403 | Rol insuficiente para la operación. |
+| 404 | Recurso no encontrado (usuario o pregunta). |
+| 500 | Error interno; revisar logs. |
 
-| Código | Significado | Causa Probable |
-|--------|-------------|----------------|
-| `400` | Bad Request | Faltan campos, email inválido, contraseña muy corta. |
-| `401` | Unauthorized | No enviaste el token o el token expiró. |
-| `403` | Forbidden | Tienes token, pero no tienes el rol necesario (ej. usuario intentando borrar pregunta). |
-| `404` | Not Found | El ID (usuario o pregunta) no existe. |
-| `500` | Internal Server Error | Error en el servidor (revisar logs). |
+## cURL de referencia
+```bash
+# Login
+curl -X POST https://<host>/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@mail.com","password":"secret123"}'
+
+# Crear usuario con foto
+curl -X POST https://<host>/api/users \
+  -F cedula=1234567890 \
+  -F email=new@mail.com \
+  -F password=secret123 \
+  -F fullName="Nuevo Usuario" \
+  -F file=@avatar.jpg
+
+# Crear pregunta (admin)
+curl -X POST https://<host>/api/questions \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"question":"¿Quién es el protagonista?","type":"multiple-choice","anime":"Naruto","correctAnswer":"Naruto","options":["Naruto","Sasuke","Sakura"]}'
+
+# Responder pregunta
+curl -X POST https://<host>/api/questions/<id>/answer \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"answer":"Naruto"}'
+```
