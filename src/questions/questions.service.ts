@@ -13,28 +13,58 @@ export class QuestionsService {
   ) {}
 
   async create(createQuestionDto: CreateQuestionDto) {
-    const question = this.questionRepository.create(createQuestionDto);
+    const { animeId, ...rest } = createQuestionDto;
+    const question = this.questionRepository.create({
+      ...rest,
+      anime: { id: animeId },
+    });
     return this.questionRepository.save(question);
   }
 
-  async findAll() {
-    return this.questionRepository.createQueryBuilder('question')
-      .addSelect('question.correctAnswer')
-      .getMany();
+  async findAll(animeId?: string) {
+    const where = animeId ? { anime: { id: animeId } } : {};
+    return this.questionRepository.find({
+      where,
+      relations: ['anime'],
+      select: {
+        id: true,
+        question: true,
+        type: true,
+        options: true,
+        correctAnswer: true,
+        createdAt: true,
+        updatedAt: true,
+        anime: {
+          id: true,
+          name: true,
+        },
+      },
+    });
   }
 
   async findOne(id: string) {
-    const question = await this.questionRepository.findOneBy({ id });
-    if (!question) throw new NotFoundException(`Question with id ${id} not found`);
+    const question = await this.questionRepository.findOne({
+      where: { id },
+      relations: ['anime'],
+    });
+    if (!question)
+      throw new NotFoundException(`Question with id ${id} not found`);
     return question;
   }
 
   async update(id: string, updateQuestionDto: UpdateQuestionDto) {
+    const { animeId, ...rest } = updateQuestionDto;
+    const data: any = { ...rest };
+    if (animeId) {
+      data.anime = { id: animeId };
+    }
+
     const question = await this.questionRepository.preload({
       id,
-      ...updateQuestionDto,
+      ...data,
     });
-    if (!question) throw new NotFoundException(`Question with id ${id} not found`);
+    if (!question)
+      throw new NotFoundException(`Question with id ${id} not found`);
     return this.questionRepository.save(question);
   }
 
@@ -49,9 +79,12 @@ export class QuestionsService {
       select: ['id', 'correctAnswer'], // Explicitly select correctAnswer as it is hidden by default
     });
 
-    if (!question) throw new NotFoundException(`Question with id ${id} not found`);
+    if (!question)
+      throw new NotFoundException(`Question with id ${id} not found`);
 
-    const isCorrect = question.correctAnswer.toLowerCase().trim() === userAnswer.toLowerCase().trim();
+    const isCorrect =
+      question.correctAnswer.toLowerCase().trim() ===
+      userAnswer.toLowerCase().trim();
 
     return {
       correct: isCorrect,

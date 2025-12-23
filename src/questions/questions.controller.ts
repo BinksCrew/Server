@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseUUIDPipe,
+  Query,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { QuestionsService } from './questions.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
@@ -22,8 +32,8 @@ export class QuestionsController {
   @Get()
   @Auth()
   @ApiOperation({ summary: 'Get all questions' })
-  findAll() {
-    return this.questionsService.findAll();
+  findAll(@Query('animeId') animeId?: string) {
+    return this.questionsService.findAll(animeId);
   }
 
   @Get(':id')
@@ -36,7 +46,10 @@ export class QuestionsController {
   @Patch(':id')
   @Auth(ValidRoles.admin)
   @ApiOperation({ summary: 'Update a question' })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateQuestionDto: UpdateQuestionDto) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateQuestionDto: UpdateQuestionDto,
+  ) {
     return this.questionsService.update(id, updateQuestionDto);
   }
 
@@ -50,7 +63,10 @@ export class QuestionsController {
   @Post(':id/answer')
   @Auth()
   @ApiOperation({ summary: 'Submit an answer for a question' })
-  checkAnswer(@Param('id', ParseUUIDPipe) id: string, @Body() answerQuestionDto: AnswerQuestionDto) {
+  checkAnswer(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() answerQuestionDto: AnswerQuestionDto,
+  ) {
     return this.questionsService.checkAnswer(id, answerQuestionDto.answer);
   }
 }

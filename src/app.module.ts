@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { LogsModule } from './logs/logs.module';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { QuestionsModule } from './questions/questions.module';
+import { AnimesModule } from './animes/animes.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { QuestionsModule } from './questions/questions.module';
     AuthModule,
     LogsModule,
     QuestionsModule,
+    AnimesModule,
   ],
   controllers: [AppController],
   providers: [

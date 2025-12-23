@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+} from 'typeorm';
+import { Anime } from '../../animes/entities/anime.entity';
 
 @Entity('questions')
 export class Question {
@@ -11,8 +19,8 @@ export class Question {
   @Column('text')
   type: string; // 'multiple-choice', 'true-false', 'open'
 
-  @Column('text')
-  anime: string;
+  @ManyToOne(() => Anime, (anime) => anime.questions, { eager: true })
+  anime: Anime;
 
   @Column('text', { select: false }) // Hide correct answer from default queries
   correctAnswer: string;
