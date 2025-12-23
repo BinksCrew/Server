@@ -101,6 +101,10 @@ export class UsersService {
         fullName: true,
         roles: true,
         isActive: true,
+        photo_url: true,
+        username: true,
+        phone: true,
+        cedula: true,
       },
     });
   }
