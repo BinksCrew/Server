@@ -19,7 +19,7 @@ export class Question {
   @Column('text')
   type: string; // 'multiple-choice', 'true-false', 'open'
 
-  @ManyToOne(() => Anime, (anime) => anime.questions, { eager: true })
+  @ManyToOne(() => Anime, (anime) => anime.questions)
   anime: Anime;
 
   @Column('text', { select: false }) // Hide correct answer from default queries

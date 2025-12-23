@@ -22,31 +22,46 @@ export class QuestionsService {
   }
 
   async findAll(animeId?: string) {
-    const where = animeId ? { anime: { id: animeId } } : {};
-    return this.questionRepository.find({
-      where,
-      relations: ['anime'],
-      select: {
-        id: true,
-        question: true,
-        type: true,
-        options: true,
-        correctAnswer: true,
-        createdAt: true,
-        updatedAt: true,
-        anime: {
-          id: true,
-          name: true,
-        },
-      },
-    });
+    const query = this.questionRepository
+      .createQueryBuilder('q')
+      .leftJoinAndSelect('q.anime', 'a')
+      .select([
+        'q.id',
+        'q.question',
+        'q.type',
+        'q.options',
+        'q.correctAnswer',
+        'q.createdAt',
+        'q.updatedAt',
+        'a.id',
+        'a.name',
+      ]);
+
+    if (animeId) {
+      query.where('a.id = :animeId', { animeId });
+    }
+
+    return query.getMany();
   }
 
   async findOne(id: string) {
-    const question = await this.questionRepository.findOne({
-      where: { id },
-      relations: ['anime'],
-    });
+    const question = await this.questionRepository
+      .createQueryBuilder('q')
+      .leftJoinAndSelect('q.anime', 'a')
+      .select([
+        'q.id',
+        'q.question',
+        'q.type',
+        'q.options',
+        'q.correctAnswer',
+        'q.createdAt',
+        'q.updatedAt',
+        'a.id',
+        'a.name',
+      ])
+      .where('q.id = :id', { id })
+      .getOne();
+
     if (!question)
       throw new NotFoundException(`Question with id ${id} not found`);
     return question;
