@@ -59,7 +59,7 @@ export class UsersService {
     file?: Express.Multer.File,
   ) {
     const user = await this.findOne(id);
-    const { password, ...userData } = updateUserDto;
+    const { password, email, ...userData } = updateUserDto; // email changes not allowed
 
     if (file) {
       userData['photo_url'] = await this.imageUploadService.uploadImage(file);

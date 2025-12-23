@@ -11,6 +11,8 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
@@ -19,6 +21,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { ValidRoles } from '../auth/interfaces/valid-roles';
+import type { Request } from 'express';
+import { User } from './entities/user.entity';
 
 @ApiTags('Users')
 @Controller('users')
@@ -74,14 +78,13 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.admin)
+  @Auth()
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
         cedula: { type: 'string' },
-        email: { type: 'string' },
         password: { type: 'string' },
         fullName: { type: 'string' },
         username: { type: 'string' },
@@ -97,6 +100,7 @@ export class UsersController {
   update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
+    @Req() req: Request,
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -108,6 +112,13 @@ export class UsersController {
     )
     file?: Express.Multer.File,
   ) {
+    const requester = req.user as User | undefined;
+    const isOwner = requester?.id === id;
+    const isAdmin = requester?.roles?.includes(ValidRoles.admin) ?? false;
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException('No autorizado para actualizar este perfil');
+    }
+
     return this.usersService.update(id, updateUserDto, file);
   }
 
