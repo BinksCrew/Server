@@ -36,6 +36,14 @@ export class QuestionsController {
     return this.questionsService.findAll(animeId);
   }
 
+  @Get('random')
+  @Auth()
+  @ApiOperation({ summary: 'Get random questions for quiz' })
+  getRandom(@Query('count') count: string) {
+    const countNum = parseInt(count) || 10;
+    return this.questionsService.getRandomQuestions(countNum);
+  }
+
   @Get(':id')
   @Auth()
   @ApiOperation({ summary: 'Get a question by id' })

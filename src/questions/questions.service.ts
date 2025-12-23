@@ -108,4 +108,22 @@ export class QuestionsService {
       correctAnswer: question.correctAnswer,
     };
   }
+
+  async getRandomQuestions(count: number) {
+    return this.questionRepository
+      .createQueryBuilder('q')
+      .leftJoinAndSelect('q.anime', 'a')
+      .select([
+        'q.id',
+        'q.question',
+        'q.type',
+        'q.options',
+        'q.correctAnswer',
+        'a.id',
+        'a.name',
+      ])
+      .orderBy('RANDOM()')
+      .limit(count)
+      .getMany();
+  }
 }
