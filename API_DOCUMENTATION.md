@@ -10,8 +10,12 @@ Documentación completa de la API NestJS (prefijo global `/api`) para integrarla
 ## Resumen rápido de rutas
 - Salud: `GET /api/health` (pública).
 - Auth: `POST /api/auth/register`, `POST /api/auth/login` (públicas).
-- Users: `POST /api/users` (pública), `GET /api/users`, `GET /api/users/:id`, `PATCH /api/users/:id`, `DELETE /api/users/:id` (todas las de lectura/edición requieren `admin`).
-- Questions: `POST /api/questions` (`admin`), `GET /api/questions` (autenticado), `GET /api/questions/:id` (autenticado), `PATCH /api/questions/:id` (`admin`), `DELETE /api/questions/:id` (`admin`), `POST /api/questions/:id/answer` (autenticado).
+- Users: `POST /api/users` (pública), `GET /api/users`, `GET /api/users/:id`, `GET /api/users/profile/me`, `PATCH /api/users/:id`, `DELETE /api/users/:id`.
+- Questions: `POST /api/questions` (`admin`), `GET /api/questions` (autenticado), `GET /api/questions/random` (autenticado), `GET /api/questions/:id` (autenticado), `PATCH /api/questions/:id` (`admin`), `DELETE /api/questions/:id` (`admin`), `POST /api/questions/:id/answer` (autenticado).
+- Game: `POST /api/game/start` (autenticado), `POST /api/game/answer` (autenticado), `POST /api/game/:sessionId/end` (autenticado), `GET /api/game/stats` (autenticado).
+- Products: `POST /api/products` (`admin`), `GET /api/products` (autenticado), `GET /api/products/:id` (autenticado), `PATCH /api/products/:id` (`admin`), `DELETE /api/products/:id` (`admin`).
+- Redemptions: `POST /api/redemptions` (autenticado), `GET /api/redemptions` (`admin`), `GET /api/redemptions/history` (autenticado), `GET /api/redemptions/:id` (autenticado), `PATCH /api/redemptions/:id` (`admin`).
+- Leaderboard: `GET /api/leaderboard` (autenticado), `GET /api/leaderboard/weekly` (autenticado), `GET /api/leaderboard/rank` (autenticado).
 
 ## Endpoints detallados
 
@@ -95,9 +99,180 @@ Documentación completa de la API NestJS (prefijo global `/api`) para integrarla
 - Content-Type: `multipart/form-data` (mismos campos que POST, todos opcionales, incluye `file` para actualizar foto).
 - Respuesta 200: usuario actualizado.
 
-#### DELETE /api/users/:id
+#### GET /api/users/profile/me
+- Acceso: Autenticado.
+- Respuesta 200: perfil del usuario actual con puntos.
+```json
+{
+  "id": "uuid",
+  "email": "user@mail.com",
+  "fullName": "Nombre Apellido",
+  "username": "alias",
+  "phone": "+57 3000000000",
+  "photo_url": "https://...",
+  "points": 150,
+  "createdAt": "2025-12-22T15:00:00.000Z",
+  "roles": ["user"]
+}
+```
+
+### Game
+#### POST /api/game/start
+- Acceso: Autenticado.
+- Query params: `questions` (opcional, default 10).
+- Respuesta 201: nueva sesión de juego.
+```json
+{
+  "id": "session-uuid",
+  "user": "user-uuid",
+  "totalQuestions": 10,
+  "correctAnswers": 0,
+  "pointsEarned": 0,
+  "isCompleted": false,
+  "createdAt": "2025-12-22T15:00:00.000Z"
+}
+```
+
+#### POST /api/game/answer
+- Acceso: Autenticado.
+- Rate limit: 30 requests/minute.
+- Query params: `sessionId` (requerido).
+- Content-Type: `application/json`.
+- Body:
+```json
+{
+  "questionId": "question-uuid",
+  "answer": "Luffy"
+}
+```
+- Respuesta 200:
+```json
+{
+  "isCorrect": true,
+  "pointsEarned": 10,
+  "sessionProgress": {
+    "answered": 1,
+    "total": 10,
+    "pointsEarned": 10
+  }
+}
+```
+
+#### POST /api/game/:sessionId/end
+- Acceso: Autenticado.
+- Respuesta 200: sesión finalizada.
+
+#### GET /api/game/stats
+- Acceso: Autenticado.
+- Respuesta 200: estadísticas del usuario.
+```json
+{
+  "totalGames": 5,
+  "totalCorrect": 35,
+  "totalPoints": 350,
+  "averageScore": 7,
+  "recentSessions": [...]
+}
+```
+
+### Products
+#### POST /api/products
 - Acceso: `admin`.
-- Respuesta 200: `{ "message": "User with id <id> deleted" }`.
+- Content-Type: `application/json`.
+- Body:
+```json
+{
+  "name": "Naruto Figure",
+  "description": "Action figure of Naruto",
+  "price": 500,
+  "stock": 10,
+  "imageUrl": "https://example.com/figure.jpg"
+}
+```
+- Respuesta 201: producto creado.
+
+#### GET /api/products
+- Acceso: Autenticado.
+- Respuesta 200: lista de productos disponibles.
+
+#### GET /api/products/:id
+- Acceso: Autenticado.
+- Respuesta 200: producto.
+
+#### PATCH /api/products/:id
+- Acceso: `admin`.
+- Content-Type: `application/json`.
+- Body: campos opcionales para actualizar.
+- Respuesta 200: producto actualizado.
+
+#### DELETE /api/products/:id
+- Acceso: `admin`.
+- Respuesta 200: producto desactivado.
+
+### Redemptions
+#### POST /api/redemptions
+- Acceso: Autenticado.
+- Content-Type: `application/json`.
+- Body:
+```json
+{
+  "productId": "product-uuid",
+  "quantity": 1,
+  "notes": "Deliver to home address"
+}
+```
+- Respuesta 201: canje creado y procesado.
+
+#### GET /api/redemptions
+- Acceso: `admin`.
+- Respuesta 200: todos los canjes.
+
+#### GET /api/redemptions/history
+- Acceso: Autenticado.
+- Respuesta 200: historial de canjes del usuario.
+
+#### GET /api/redemptions/:id
+- Acceso: Autenticado.
+- Respuesta 200: detalle del canje.
+
+#### PATCH /api/redemptions/:id
+- Acceso: `admin`.
+- Content-Type: `application/json`.
+- Body: `{ "status": "approved", "notes": "Ready for shipping" }`.
+- Respuesta 200: canje actualizado.
+
+### Leaderboard
+#### GET /api/leaderboard
+- Acceso: Autenticado.
+- Query params: `limit` (opcional, default 50).
+- Respuesta 200: ranking global.
+```json
+[
+  {
+    "id": "user-uuid",
+    "username": "otaku_master",
+    "fullName": "Master Otaku",
+    "points": 1500,
+    "photo_url": "https://..."
+  }
+]
+```
+
+#### GET /api/leaderboard/weekly
+- Acceso: Autenticado.
+- Query params: `limit` (opcional, default 50).
+- Respuesta 200: ranking semanal.
+
+#### GET /api/leaderboard/rank
+- Acceso: Autenticado.
+- Respuesta 200: ranking del usuario actual.
+```json
+{
+  "userId": "user-uuid",
+  "points": 150,
+  "rank": 42
+}
+```
 
 ### Questions
 #### POST /api/questions

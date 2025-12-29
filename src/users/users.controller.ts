@@ -15,7 +15,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiConsumes, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -75,6 +75,14 @@ export class UsersController {
   @Auth(ValidRoles.admin)
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
+  }
+
+  @Get('profile/me')
+  @Auth()
+  @ApiOperation({ summary: 'Get current user profile with points' })
+  getProfile(@Req() req: Request) {
+    const user = req.user as User;
+    return this.usersService.findProfile(user.id);
   }
 
   @Patch(':id')

@@ -105,12 +105,34 @@ export class UsersService {
         username: true,
         phone: true,
         cedula: true,
+        points: true,
       },
     });
   }
 
+  async findProfile(id: string) {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        username: true,
+        phone: true,
+        photo_url: true,
+        points: true,
+        createdAt: true,
+        roles: true,
+      },
+    });
+
+    if (!user) throw new NotFoundException(`User with id ${id} not found`);
+    return user;
+  }
+
   private handleDBErrors(error: QueryFailedError): never {
-    if ((error.driverError as any).code === '23505') throw new BadRequestException((error.driverError as any).detail);
+    if ((error.driverError as any).code === '23505')
+      throw new BadRequestException((error.driverError as any).detail);
 
     console.log(error);
     throw new InternalServerErrorException('Please check server logs');

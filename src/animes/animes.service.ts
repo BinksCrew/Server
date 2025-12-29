@@ -61,7 +61,8 @@ export class AnimesService {
   }
 
   private handleDBErrors(error: QueryFailedError): never {
-    if ((error.driverError as any).code === '23505') throw new BadRequestException((error.driverError as any).detail);
+    if ((error.driverError as any).code === '23505')
+      throw new BadRequestException((error.driverError as any).detail);
     console.log(error);
     throw new BadRequestException('Please check server logs');
   }

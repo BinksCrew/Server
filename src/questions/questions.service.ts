@@ -118,7 +118,7 @@ export class QuestionsService {
         'q.question',
         'q.type',
         'q.options',
-        'q.correctAnswer',
+        // 'q.correctAnswer', // Removed for security - don't send correct answers to client
         'a.id',
         'a.name',
       ])

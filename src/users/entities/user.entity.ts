@@ -32,6 +32,9 @@ export class User {
   @Column('text', { nullable: true })
   photo_url: string | null;
 
+  @Column({ default: 0 })
+  points: number;
+
   @Column({ default: true })
   isActive: boolean;
 
