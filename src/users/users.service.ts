@@ -116,6 +116,7 @@ export class UsersService {
       select: {
         id: true,
         email: true,
+        cedula: true,
         fullName: true,
         username: true,
         phone: true,
