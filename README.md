@@ -44,6 +44,23 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## Metrex (metrics dashboard)
+
+The API mounts a Metrex dashboard (HTTP metrics + Prometheus exporter) at:
+
+- `GET /metrex`: HTML dashboard
+- `GET /metrex/data`: aggregated metrics JSON
+- `GET /metrex/metrics`: Prometheus text exporter
+
+Optional basic auth (recommended in production):
+
+- `METREX_USERNAME`
+- `METREX_PASSWORD`
+
+Optional route override:
+
+- `METREX_ROUTE_PATH` (default: `/metrex`)
+
 ## Run tests
 
 ```bash
